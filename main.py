@@ -23,6 +23,8 @@ import xbmcgui
 import xbmcplugin
 from xbmcaddon import Addon
 from xbmcvfs import translatePath
+import requests
+import json 
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
@@ -33,119 +35,92 @@ ADDON_PATH = translatePath(Addon().getAddonInfo('path'))
 ICONS_DIR = os.path.join(ADDON_PATH, 'resources', 'images', 'icons')
 FANART_DIR = os.path.join(ADDON_PATH, 'resources', 'images', 'fanart')
 
+Fshare_app_key = "dMnqMMZMUnN5YpvKENaEhdQQ5jxDqddt"
+Fshare_User_Agent = "fshare_tkvv"
+
 # Public domain movies are from https://publicdomainmovie.net
 # Here we use a hardcoded list of movies simply for demonstrating purposes
 # In a "real life" plugin you will need to get info and links to video files/streams
 # from some website or online service.
 VIDEOS = [
-    {
-        'genre': 'Drama',
-        'icon': os.path.join(ICONS_DIR, 'Drama.png'),
-        'fanart': os.path.join(FANART_DIR, 'Drama.jpg'),
-        'movies': [
-            {
-                'title': 'The Stranger',
-                'url': 'https://ia800908.us.archive.org/30/items/TheStranger_0/The_Stranger_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Movie-Mystery-Magazine-July-1946.jpg',
-                'plot': 'In 1946, Mr. Wilson (Edward G. Robinson) of the United Nations War Crimes Commission is hunting for '
-                        'a Nazism fugitive Franz Kindler (Orson Welles), a war criminal who has erased all evidence which '
-                        'might identify him. Kindler has assumed a new identity, Charles Rankin, '
-                        'and has become a University-preparatory school#United States and Canada teacher '
-                        'in a small town in the United States. ',
-                'year': 1946,
-            },
-            {
-                'title': 'The Iron Mask',
-                'url': 'https://ia600702.us.archive.org/3/items/iron_mask/iron_mask_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Ironmaskposter.jpg',
-                'plot': 'The Iron Mask is a 1929 American part-talkie adventure film directed by Allan Dwan. '
-                          'It is an adaptation of the last section of the novel The Vicomte de Bragelonne by '
-                          'Alexandre Dumas, père, which is itself based on the French legend of The Man in the Iron Mask.',
-                'year': 1929,
-            },
-            {
-                'title': 'Meet John Doe',
-                'url': 'https://ia804707.us.archive.org/30/items/meet_john_doe_ipod/video_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Poster_-_Meet_John_Doe_01.jpg',
-                'plot': 'Meet John Doe is a 1941 in film United States comedy film drama film film directed and produced '
-                        'by Frank Capra, and starring Gary Cooper and Barbara Stanwyck. The film is about a "grassroots" '
-                        'political campaign created unwittingly by a newspaper columnist and pursued by a wealthy businessman.',
-                'year': 1941,
-            },
-        ],
-    },
-    {
-        'genre': 'Horror',
-        'icon': os.path.join(ICONS_DIR, 'Horror.png'),
-        'fanart': os.path.join(FANART_DIR, 'Horror.jpg'),
-        'movies': [
-            {
-                'title': 'House on Haunted Hill',
-                'url': 'https://ia800203.us.archive.org/18/items/house_on_haunted_hill_ipod/house_on_haunted_hill_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=House_on_Haunted_Hill.jpg',
-                'plot': 'Eccentric millionaire Frederick Loren (Vincent Price) invites five people to a "party" '
-                        'he is throwing for his fourth wife, Annabelle (Carol Ohmart), '
-                        'in an allegedly haunted house he has rented, promising to give them each $10,000 '
-                        'with the stipulation that they must stay the entire night in the house after '
-                        'the doors are locked at midnight.',
-                'year': 1959,
-            },
-            {
-                'title': 'Carnival of Souls',
-                'url': 'https://ia600301.us.archive.org/8/items/CarnivalofSouls/CarnivalOfSouls_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Carnival_of_Souls_%25281962_pressbook_cover%2529.jpg',
-                'plot': 'Carnival of Souls is a 1962 Independent film horror film starring Candace Hilligoss. Produced and directed by Herk Harvey '
-                        'for an estimated $33,000, the film did not gain widespread attention when originally released, '
-                        'as a B-movie; today, however, it is a cult classic.',
-                'year': 1962,
-            },
-            {
-                'title': 'The Screaming Skull',
-                'url': 'https://ia801603.us.archive.org/10/items/TheScreamingSkull/TheScreamingSkull.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Poster_for_The_Screaming_Skull.jpg',
-                'plot': 'A widower remarries and the couple move into the house he shared with his previous wife. '
-                        'Only the ghost of the last wife might still be hanging around.',
-                'year': 1958,
-            },
-        ],
-    },
-    {
-        'genre': 'Comedy',
-        'icon': os.path.join(ICONS_DIR, 'Comedy.png'),
-        'fanart': os.path.join(FANART_DIR, 'Comedy.jpg'),
-        'movies': [
-            {
-                'title': 'Charlie Chaplin\'s "The Vagabond"',
-                'url': 'https://ia904601.us.archive.org/16/items/CC_1916_07_10_TheVagabond/CC_1916_07_10_TheVagabond.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=The_Vagabond_%25281916%2529.jpg',
-                'plot': 'Charlie Chaplins 53rd Film Released July 10 1916 The Vagabond was a silent '
-                        'film by Charlie Chaplin and his third film with Mutual Films. Released in 1916, '
-                        'it co-starred Edna Purviance, Eric Campbell, Leo White and Lloyd Bacon. '
-                        'This film echoed Chaplin\'s work on The Tramp, with more drama mixed in with comedy.',
-                'year': 1916,
-            },
-            {
-                'title': 'Sing A Song of Six Pants',
-                'url': 'https://ia601508.us.archive.org/26/items/sing_a_song_of_six_pants/sing_a_song_of_six_pants_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=SingSong6PantsOneSheet47.JPG',
-                'plot': 'The Three Stooges (Moe, Larry, Shemp) are tailors and are heavily in debt. '
-                        'Could a big reward for the capture of a fugitive bank robber answer their financial prayers?',
-                'year': 1947,
-            },
-            {
-                'title': 'Steamboat Bill, Jr.',
-                'url': 'https://ia904501.us.archive.org/32/items/SteamboatBillJr/Steamboat_Bill.Jr_512kb.mp4',
-                'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Steamboat_bill_poster.jpg',
-                'plot': 'Steamboat Bill, Jr. is the story of a naive, college-educated dandy who must prove himself '
-                        'to his working-class father, a hot-headed riverboat captain, while courting the daughter of '
-                        'his father\'s rival, who threatens to put Steamboat Bill, Sr. '
-                        'and his paddle-wheeler out of business.',
-                'year': 1928,
-            },
-        ],
-    },
-]
+        {
+            'genre': 'Drama',
+            'icon': os.path.join(ICONS_DIR, 'Drama.png'),
+            'fanart': os.path.join(FANART_DIR, 'Drama.jpg'),
+            'movies': [
+                {
+                    'title': 'The Stranger',
+                    'url': 'http://download014.fshare.vn/dl/EU4YZAX70M3e4Ab9cQQCRa9idJWsWQoiRqoEgBgDwYt1kKHV0hgRMvfAbFohUGzRRcb0DaiaTHigHwWc/Inside.Out.2.2024.1080p.TELESYNC.x265.COLLECTiVE.mkv',
+                    'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Movie-Mystery-Magazine-July-1946.jpg',
+                    'plot': 'Dùng thử',
+                    'year': 1946,
+                }
+            ]
+        }
+    ]
 
+def json_load(str):
+    try:
+    # đọc JSON trừ chuổi
+        return json.loads(str)
+    except:
+        return None
+    
+def getListPhim():
+    try:
+        response_ = requests.post(url="https://thuvienhd.xyz/?feed=fsharejson&search=&page=1", data=json.dumps({}), headers={
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "Cache-Control": "no-cache",
+                                "User-Agent": "Min.Cafe 27.1"
+                            }, timeout=3*60)
+        if response_.status_code == 200:
+    #         [
+    #     {
+    #         'genre': 'Drama',
+    #         'icon': os.path.join(ICONS_DIR, 'Drama.png'),
+    #         'fanart': os.path.join(FANART_DIR, 'Drama.jpg'),
+    #         'movies': [
+    #             {
+    #                 'title': 'The Stranger',
+    #                 'url': 'http://download014.fshare.vn/dl/EU4YZAX70M3e4Ab9cQQCRa9idJWsWQoiRqoEgBgDwYt1kKHV0hgRMvfAbFohUGzRRcb0DaiaTHigHwWc/Inside.Out.2.2024.1080p.TELESYNC.x265.COLLECTiVE.mkv',
+    #                 'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Movie-Mystery-Magazine-July-1946.jpg',
+    #                 'plot': 'Dùng thử',
+    #                 'year': 1946,
+    #             }
+    #         ]
+    #     }
+    # ]
+            data_  = json_load(response_.content)
+            rs_data = []
+            for d_ in data_:
+                if "title" in d_ and "image" in d_ and "links" in d_:
+                    movide_new = {
+                        "genre":d_["title"],
+                        'icon': d_["image"],
+                        'fanart': d_["image"],
+                        "movies": []
+                    }
+                    list_link = d_["links"]
+                    for ll in list_link:
+                        if "title" in ll and "link" in ll:
+                            movide_new["movies"].append({
+                                'title': ll["title"],
+                                'url': ll["link"],
+                                'poster': d_["image"],
+                                'plot': d_["title"],
+                                'year': 0,
+                            })
+
+                    rs_data.append(movide_new)
+            return rs_data
+    except Exception as inst: 
+        exc_type, exc_obj, exc_tb = sys.exc_info() 
+        getPyFormData("TelegramSendBot", {
+                            "content":"Lỗi tại:"+str(exc_tb.tb_lineno)+", loại:"+str(exc_type) +"-Lỗi:"+str(inst),
+                            "telegram_user":"thanhlm22"
+                        })  
+    return []
 
 def get_url(**kwargs):
     """
@@ -168,6 +143,7 @@ def get_genres():
     :return: The list of video genres
     :rtype: list
     """
+    VIDEOS = getListPhim()
     return VIDEOS
 
 
@@ -226,6 +202,46 @@ def list_genres():
     xbmcplugin.endOfDirectory(HANDLE)
 
 
+def loginFshare(user_,pass_):
+    session_id = ""
+    token_ = ""
+    response_ = requests.post(url="https://api.fshare.vn/api/user/login", data=json.dumps({
+                    "user_email" : user_,
+                    "password":	pass_,
+                    "app_key" : Fshare_app_key
+                }), headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Cache-Control": "no-cache",
+                    "User-Agent": Fshare_User_Agent
+                }, timeout=3*60)
+    
+    if response_.status_code == 200:
+        data_ =  json_load(response_.content) 
+        if "msg" in data_ and data_["msg"]=="Login successfully!" and "token" in data_ and "session_id" in data_:
+            session_id = data_["session_id"]
+            token_ = data_["token"]
+    return session_id,token_
+
+def buildLinkDown(link_view,token_,session_id_): 
+    response_ = requests.post(url="https://api.fshare.vn/api/session/download", data=json.dumps({
+                    "zipflag" : 0,
+                    "url" : link_view,
+                    "password" : "",
+                    "token": token_
+                }), headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Cache-Control": "no-cache",
+                    "Cookie":"session_id="+session_id_
+                }, timeout=3*60)
+     
+    if response_.status_code == 200:
+        data_ =  json_load(response_.content) 
+        if "location" in data_:
+            return data_["location"]
+    return ""
+
 def list_videos(genre_index):
     """
     Create the list of playable videos in the Kodi interface.
@@ -242,8 +258,19 @@ def list_videos(genre_index):
     xbmcplugin.setContent(HANDLE, 'movies')
     # Get the list of videos in the category.
     videos = genre_info['movies']
-    # Iterate through videos.
+
+    #vì session chỉ thời gian là hết nên cứ login lại
+    session_id,token_ = loginFshare("fshare_tkvv@fshare.vn","1234@abcd")
+
+    videos_new = []
     for video in videos:
+        link_view = buildLinkDown(video['url'],token_,session_id)
+        if link_view!="":
+            video['url']=link_view  
+            videos_new.append(video)
+
+    # Iterate through videos.
+    for video in videos_new:
         # Create a list item with a text label
         list_item = xbmcgui.ListItem(label=video['title'])
         # Set graphics (thumbnail, fanart, banner, poster, landscape etc.) for the list item.
@@ -263,7 +290,9 @@ def list_videos(genre_index):
         list_item.setProperty('IsPlayable', 'true')
         # Create a URL for a plugin recursive call.
         # Example: plugin://plugin.video.example/?action=play&video=https%3A%2F%2Fia600702.us.archive.org%2F3%2Fitems%2Firon_mask%2Firon_mask_512kb.mp4
+        
         url = get_url(action='play', video=video['url'])
+        #build lại các url của videos 
         # Add the list item to a virtual Kodi folder.
         # is_folder = False means that this item won't open any sub-list.
         is_folder = False
@@ -320,8 +349,30 @@ def router(paramstring):
         # e.g. typos in action names.
         raise ValueError(f'Invalid paramstring: {paramstring}!')
 
+def getPyFormData(key__request, data__request={}):
+    # lấy data cho form auto từ GooInTech
+    myobj = {"key__request": key__request,
+             "data__request": data__request}
+
+    headers_ = {
+        "Content-Type": "application/json",
+        "GooPyForm": "IsGOO"
+    }
+    r = requests.post(url="https://min.cafe/pyform-data", data=json.dumps(
+        myobj), headers=headers_)
+
+    if r.status_code == 200:
+        return r.json()
+    return {}
 
 if __name__ == '__main__':
+    # 
+    # getPyFormData("TelegramSendBot", {
+    #                         "content":"aaaaa", 
+    #                         "telegram_user":"thanhlm22"
+    #                     })
+
+    VIDEOS = getListPhim()
     # Call the router function and pass the plugin call parameters to it.
     # We use string slicing to trim the leading '?' from the plugin call paramstring
     router(sys.argv[2][1:])

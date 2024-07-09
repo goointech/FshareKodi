@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.example"
+<addon id="plugin.video.fshare"
 version="3.0.1"
-name="Example Kodi Video Plugin"
+name="Fshare"
 provider-name="Roman_V_M">
 <requires>
-  <import addon="xbmc.python" version="3.0.1"/>
+  <import addon="xbmc.python" version="3.0.1"/> 
+  <import addon="script.module.requests" version="2.12.4"/>
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>video</provides>
 </extension>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en_GB">Example Kodi Video Plugin</summary>
-  <description lang="en_GB">An example video plugin for Kodi mediacenter.</description>
-  <disclaimer lang="en_GB">Public domain movies are provided by publicdomainmovie.net.</disclaimer>
-  <license>GPL-3.0-only	</license>
+  <summary lang="en_GB">Fshare</summary>
+  <description lang="en_GB">Xem phim Fshare trực tuyến</description>
+  <disclaimer lang="en_GB">Xem phim Fshare trực tuyến</disclaimer>
+  <license>GPL-3.0-only</license>
   <assets>
     <icon>resources/images/icon.png</icon>
     <fanart>resources/images/fanart.jpg</fanart>
