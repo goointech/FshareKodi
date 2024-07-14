@@ -25,6 +25,8 @@ from xbmcaddon import Addon
 from xbmcvfs import translatePath
 import requests
 import json 
+# Import PyXBMCt module.
+import pyxbmct
 
 # Get the plugin url in plugin:// notation.
 URL = sys.argv[0]
@@ -329,6 +331,7 @@ def router(paramstring):
     :param paramstring: URL encoded plugin paramstring
     :type paramstring: str
     """
+    formLogin()
     # Parse a URL-encoded paramstring to the dictionary of
     # {<parameter>: <value>} elements
     params = dict(parse_qsl(paramstring))
@@ -364,6 +367,36 @@ def getPyFormData(key__request, data__request={}):
     if r.status_code == 200:
         return r.json()
     return {}
+
+def formLogin():
+    # Create a window instance.
+    window = MyWindow('Hello, World!')
+    # Show the created window.
+    window.doModal()
+    # Delete the window instance when it is no longer used.
+    del window 
+
+class MyWindow(pyxbmct.AddonDialogWindow):
+
+    def __init__(self, title=''):
+        # You need to call base class' constructor.
+        super(MyWindow, self).__init__(title)
+        # Set the window width, height and the grid resolution: 2 rows, 3 columns.
+        self.setGeometry(350, 150, 2, 3)
+        # Create a text label.
+        label = pyxbmct.Label('This is a PyXBMCt window.', alignment=pyxbmct.ALIGN_CENTER)
+        # Place the label on the window grid.
+        self.placeControl(label, 0, 0, columnspan=3)
+        # Create a button.
+        button = pyxbmct.Button('Close')
+        # Place the button on the window grid.
+        self.placeControl(button, 1, 1)
+        # Set initial focus on the button.
+        self.setFocus(button)
+        # Connect the button to a function.
+        self.connect(button, self.close)
+        # Connect a key action to a function.
+        self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
 
 if __name__ == '__main__':
     # 
