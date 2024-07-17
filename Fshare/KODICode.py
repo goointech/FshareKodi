@@ -2,6 +2,7 @@ import os
 import sys
 from urllib.parse import urlencode, parse_qsl
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 from xbmcaddon import Addon
@@ -9,6 +10,7 @@ from xbmcvfs import translatePath
 import requests
 import json 
 # Import PyXBMCt module.
+
 import pyxbmct
 import time
 
@@ -564,4 +566,18 @@ class myMessage(pyxbmct.AddonDialogWindow):
         if self.callBack_close is not None:
             self.callBack_close()
 
- 
+
+class SettingMonitor(xbmc.Monitor):
+    def __init__(self, *args, **kwargs):
+        xbmc.Monitor.__init__(self)
+
+    def onSettingsChanged(self):
+        window = myMessage("onSettingsChanged","1")
+        # Show the created window.
+        window.doModal()
+        # Delete the window instance when it is no longer used.
+        del window  
+
+
+
+monsettings = SettingMonitor()
