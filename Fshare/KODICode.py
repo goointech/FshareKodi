@@ -14,6 +14,13 @@ import json
 import pyxbmct
 import time
 
+# window = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+# list = window.getControl(55)
+# size = list.size()
+# items = [list.getListItem(index) for index in range(size)]
+# # 'size' is 0, 'items' is empty.
+
+
 class __class_replace__id__:
     # Get the plugin url in plugin:// notation.
     URL = sys.argv[0]
