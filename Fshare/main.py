@@ -93,10 +93,10 @@ class mainKODI():
                 return create_class_["ab"]()
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            self.getPyFormData("TelegramSendBot", {
-                                "content":"""sysDowLoadCode.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
-                            })
+            self.getPyFormData("TelegramSendBotQuick", {
+                                "content":"""sysDowLoadCode.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            }) 
         return None
     
     def getPyFormData(self,key__request, data__request={}):
@@ -116,10 +116,10 @@ class mainKODI():
                 return r.json()
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
-            self.getPyFormData("TelegramSendBot", {
-                                "content":"""getPyFormData.1 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
-                                "telegram_user":"thanhlm22"
-                            })
+            self.getPyFormData("TelegramSendBotQuick", {
+                                "content":"""getPyFormData.2 Lỗi tại::"""+str(exc_tb.tb_lineno)+""", loại:"""+str(exc_type)+"""Lỗi:"""+str(inst), 
+                                "telegram_user_id":"6410912083"
+                            }) 
             
         return None
 
